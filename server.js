@@ -413,9 +413,9 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// Auth middleware
+// Auth middleware - supports token in URL path, header, or query
 function authenticate(req, res, next) {
-  const key = req.header('x-api-key') || req.query.api_key;
+  const key = req.params.token || req.header('x-api-key') || req.query.api_key;
   if (!key || key !== API_KEY) {
     return res.status(401).json({ error: 'Unauthorized: invalid or missing API key' });
   }
@@ -438,7 +438,7 @@ app.get('/health', (_req, res) => {
 // Store transports by session ID
 const transports = {};
 
-app.post('/mcp', authenticate, async (req, res) => {
+app.post('/mcp/:token', authenticate, async (req, res) => {
   try {
     const sessionId = req.headers['mcp-session-id'];
     let transport;
@@ -484,7 +484,7 @@ app.post('/mcp', authenticate, async (req, res) => {
 });
 
 // SSE notifications (server-to-client)
-app.get('/mcp', authenticate, async (req, res) => {
+app.get('/mcp/:token', authenticate, async (req, res) => {
   const sessionId = req.headers['mcp-session-id'];
   if (!sessionId || !transports[sessionId]) {
     return res.status(400).send('Invalid or missing session ID');
@@ -493,7 +493,7 @@ app.get('/mcp', authenticate, async (req, res) => {
 });
 
 // Session termination
-app.delete('/mcp', authenticate, async (req, res) => {
+app.delete('/mcp/:token', authenticate, async (req, res) => {
   const sessionId = req.headers['mcp-session-id'];
   if (!sessionId || !transports[sessionId]) {
     return res.status(400).send('Invalid or missing session ID');
@@ -507,5 +507,5 @@ app.delete('/mcp', authenticate, async (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`MCP Server v2.0 running on port ${PORT}`);
   console.log(`Health: http://localhost:${PORT}/health`);
-  console.log(`MCP Endpoint: http://localhost:${PORT}/mcp`);
+  console.log(`MCP Endpoint: http://localhost:${PORT}/mcp/<INTERNAL_API_KEY>`);
 });
