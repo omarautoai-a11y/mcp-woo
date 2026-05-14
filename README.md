@@ -28,3 +28,4 @@ All protected endpoints require the `x-api-key` header.
 4. Start command: `node server.js`
 5. Add all environment variables from the table above
 6. Deploy
+
